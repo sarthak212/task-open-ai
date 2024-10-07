@@ -8,8 +8,8 @@ const authProvider: NextAuthConfig = {
     credentials({
       name: "Credentials",
       credentials: {
-        username: { label: "Username", type: "text", placeholder: "name" },
-        password: { label: "Password", type: "password" },
+        username: { label: "Username", type: "text", placeholder: "Enter Username" },
+        password: { label: "Password", type: "password", placeholder: "*******" },
       },
       async authorize(credentials): Promise<any> {
         const res = await fetch(`${process.env.SITE_URL}/api/user`, {
@@ -18,7 +18,6 @@ const authProvider: NextAuthConfig = {
           headers: { "Content-Type": "application/json" },
         });
         const user = await res.json();
-        console.log("user ", user, res);
         // If no error and we have user data, return it
         if (res.ok && user) {
           return user;
@@ -30,6 +29,8 @@ const authProvider: NextAuthConfig = {
   ],
   theme: {
     colorScheme: "light",
+    brandColor: '#5a67d8',
+    buttonText: "Sign In",
   },
   basePath: BaseURL,
   secret: process.env.AUTH_SECRET,
