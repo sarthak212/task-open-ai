@@ -43,7 +43,7 @@ export default function Icon({
       src = "ai.svg";
       break;
     case "italian":
-      src = "italian.svg";
+      src = "Italian.svg";
       break;
     case "pin":
       src = "pin.svg";
