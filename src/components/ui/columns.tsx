@@ -61,9 +61,24 @@ export const getColumns = (updateFunction: any, userData: any[]) => {
         const label = labels.find((label) => label.value === row.original.status);
 
         return (
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 text-[#94989E]">
             {label && <Badge variant="outline">{label.label}</Badge>}
             <span className="max-w-[500px] truncate font-medium">{row.getValue("title")}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "description",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Description Preview" />,
+      cell: ({ row }) => {
+        const label = labels.find((label) => label.value === row.original.status);
+
+        return (
+          <div className="flex space-x-2 text-[#94989E]">
+            <span className="max-w-[200px] truncate font-medium">
+              {row.getValue("description")}
+            </span>
           </div>
         );
       },
@@ -78,7 +93,7 @@ export const getColumns = (updateFunction: any, userData: any[]) => {
           return null;
         }
 
-        return <div className="flex w-[100px] items-center">{status.label}</div>;
+        return <div className="flex w-[100px] items-center text-[#94989E]">{status.label}</div>;
       },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id));
@@ -96,7 +111,7 @@ export const getColumns = (updateFunction: any, userData: any[]) => {
           return null;
         }
 
-        return <div className="flex items-center">{priority.label}</div>;
+        return <div className="flex items-center text-[#94989E]">{priority.label}</div>;
       },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id));
@@ -109,7 +124,9 @@ export const getColumns = (updateFunction: any, userData: any[]) => {
         const userIds: string[] = row.getValue("userid");
         const user: any[] = userData?.filter((e) => userIds?.includes(e.id)) || [];
         return (
-          <div className="flex items-center">{user?.map((item: any) => item.email).join(", ")}</div>
+          <div className="flex items-center text-[#94989E]">
+            {user?.map((item: any) => item.email).join(", ")}
+          </div>
         );
       },
       filterFn: (row, id, value) => {
@@ -122,7 +139,9 @@ export const getColumns = (updateFunction: any, userData: any[]) => {
       cell: ({ row }) => {
         const project = projectList.find((e) => e.value === row.getValue("project"));
 
-        return <div className="flex items-center">{project ? project.label : ""}</div>;
+        return (
+          <div className="flex items-cente text-[#94989E]">{project ? project.label : ""}</div>
+        );
       },
     },
     {
@@ -137,9 +156,9 @@ export const getColumns = (updateFunction: any, userData: any[]) => {
           : [];
 
         return (
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 text-[#94989E]">
             {tags.map((tag) => (
-              <Badge key={tag.value} variant="outline">
+              <Badge className="text-[#94989E]" key={tag.value} variant="outline">
                 {tag.label}
               </Badge>
             ))}

@@ -13,10 +13,10 @@ export async function POST(req: Request) {
   try {
     const completion = await openai.completions.create({
       model: "gpt-3.5-turbo-instruct",
-      prompt: `Based on the following task title and description, suggest appropriate tags, and project only if perfectly alligned with text or description else leave it empty:
+      prompt: `Based on the following task title , suggest appropriate tags, and project only if perfectly alligned with text or description else leave it empty:
       
 Title: ${title}
-Description: ${description}
+
 Available tags: frontend, backend, design, marketing, bug,
 Available projects: crm, dashboard, api-integration
 

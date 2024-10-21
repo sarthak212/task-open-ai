@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import "./ricttextcss.scss";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Highlight from "@tiptap/extension-highlight";
+import Placeholder from "@tiptap/extension-placeholder";
+import Typography from "@tiptap/extension-typography";
+import Link from "@tiptap/extension-link";
+// import Emoji from '@tiptap/extension-emoji'
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import { FilePlus, Plus, SquarePen } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -35,6 +47,22 @@ import { useOpenAI } from "@/hooks/useOpenAi";
 import { useQueryClient } from "@tanstack/react-query";
 import AnimatedAccordion from "./ui/AnimateAccordion";
 import { priorityList, projectList, statusList, tagsList } from "@/data";
+import css from "highlight.js/lib/languages/css";
+import js from "highlight.js/lib/languages/javascript";
+import ts from "highlight.js/lib/languages/typescript";
+import html from "highlight.js/lib/languages/xml";
+
+import { all, createLowlight } from "lowlight";
+import { LinkPopover } from "./linkpopover";
+
+const lowlight = createLowlight(all);
+
+// This is only an example, all supported languages are already loaded above
+// but you can also register only specific languages to reduce bundle-size
+lowlight.register("html", html);
+lowlight.register("css", css);
+lowlight.register("js", js);
+lowlight.register("ts", ts);
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -61,6 +89,56 @@ export function CreateTask() {
   } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
   });
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Highlight,
+      Typography,
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+        defaultProtocol: "https",
+      }),
+      // Emoji,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+      }),
+      Placeholder.configure({
+        placeholder: "Describe this task",
+      }),
+      //   Link.configure({
+      //     openOnClick: false,
+      //   }),
+      //   Emoji,
+    ],
+  });
+
+  const setLink = useCallback(
+    (url: string) => {
+      // const url = window.prompt("URL", previousUrl);
+
+      // cancelled
+      if (url === null) {
+        return;
+      }
+
+      // empty
+      if (url === "") {
+        editor?.chain().focus().extendMarkRange("link").unsetLink().run();
+
+        return;
+      }
+
+      // update link
+      editor?.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    },
+    [editor]
+  );
   const { data: userData } = useUsers();
   const createTask = useCreateTask();
   const priorityValue = watch(["status", "userid", "priority", "tags", "project"]);
@@ -68,7 +146,6 @@ export function CreateTask() {
   const queryClient = useQueryClient();
   const { data: openAiData, refetch } = useOpenAI({
     title: titleDesc[0],
-    description: titleDesc[1],
   });
 
   const [aiData, setAiData] = useState<{
@@ -88,7 +165,7 @@ export function CreateTask() {
     createTask.mutate(
       {
         title: data.title,
-        description: data.description,
+        description: editor?.getText({ blockSeparator: "\n\n" }),
         status: data.status,
         priority: data.priority,
         userid: data.userid,
@@ -99,6 +176,7 @@ export function CreateTask() {
         onSuccess: (responseData) => {
           setOpen(false);
           setAiData({});
+          editor?.commands.clearContent();
           reset();
         },
       }
@@ -120,16 +198,16 @@ export function CreateTask() {
   };
 
   useEffect(() => {
-    if (titleDesc[0] && titleDesc[1]) {
+    if (titleDesc[0]) {
       const timeout = setTimeout(() => {
-        const query = queryClient.getQueryData(["openai", titleDesc[0], titleDesc[1]]);
+        const query = queryClient.getQueryData(["openai", titleDesc[0], ""]);
         if (!query) {
           refetch();
         }
       }, 1300);
       return () => clearTimeout(timeout);
     }
-  }, [titleDesc[0], titleDesc[1]]);
+  }, [titleDesc[0]]);
 
   const isAllAdded = useMemo(() => {
     let isStatusAdded = true;
@@ -156,7 +234,15 @@ export function CreateTask() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Task</Button>
+        <Button
+          type="submit"
+          className="px-4 h-9 flex gap-2 items-center text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+        >
+          <div className="py-[6px]">Create Task</div>
+          <div className="w-[1px] flex h-full bg-indigo-500"> </div>
+          {/* <Icon className="py-[6px]" name="enter" /> */}
+          <SquarePen size={"16"} />
+        </Button>
       </DialogTrigger>
       <DialogContent
         className="max-w-3xl p-0 m-0"
@@ -166,139 +252,6 @@ export function CreateTask() {
         }}
       >
         <form onSubmit={handleSubmit(onSubmit)}>
-          {/* <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
-            <DialogDescription>
-              Fill in the details for your new task.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
-              <Input id="title" className="col-span-3" {...register("title")} />
-              {errors.title && (
-                <p className="text-red-500 col-span-3 col-start-2">
-                  {errors.title.message}
-                </p>
-              )}
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                className="col-span-3"
-                {...register("description")}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange({
-                        target: { value },
-                        name: field.name,
-                      });
-                    }}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todo">To Do</SelectItem>
-                      <SelectItem value="inprogress">In Progress</SelectItem>
-                      <SelectItem value="done">Done</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="priority" className="text-right">
-                Priority
-              </Label>
-              <Controller
-                name="priority"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange({
-                        target: { value },
-                        name: field.name,
-                      });
-                    }}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.priority && (
-                <p className="text-red-500 col-span-3 col-start-2">
-                  {errors.priority.message}
-                </p>
-              )}
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="assigned" className="text-right">
-                Assigned To
-              </Label>
-              <Controller
-                name="userid"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange({
-                        target: { value },
-                        name: field.name,
-                      });
-                    }}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select Assigned User" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userData?.map((item: any) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-
-              {errors.userid && (
-                <p className="text-red-500 col-span-3 col-start-2">
-                  {errors.userid.message} userid{" "}
-                  {JSON.stringify({ ...register("userid") })}
-                </p>
-              )}
-            </div>
-          </div> */}
           <div
             // className="bg-white rounded-lg w-full max-w-3xl"
             onClick={(e) => e.stopPropagation()}
@@ -316,9 +269,6 @@ export function CreateTask() {
 
                   <span className="text-sm text-[#6C6F75] font-medium">New Task</span>
                 </div>
-                {/* <DialogClose>
-                  <X className="w-5 h-5" />
-                </DialogClose> */}
               </div>
 
               <input
@@ -336,11 +286,16 @@ export function CreateTask() {
 
               {/* <Tiptap /> */}
 
-              <textarea
+              {/* <textarea
                 placeholder="Describe this task"
                 {...register("description")}
                 className="w-full p-2 focus:outline-none text-[#94989E] resize-none"
                 rows={2}
+              /> */}
+
+              <EditorContent
+                className="focus-visible:outline-none p-2 text-[#94989E] min-h-[60px] max-h-[160px] overflow-y-scroll"
+                editor={editor}
               />
 
               <AnimatedAccordion isOpen={Object.keys(aiData).length && !isAllAdded ? true : false}>
@@ -522,7 +477,7 @@ export function CreateTask() {
                               color: "#94989E",
                             }}
                           >
-                            {priorityValue[index]
+                            {priorityValue[index] && priorityValue[index].length
                               ? getLabel(priorityValue[index], item.options)
                               : item.label}
                           </h6>
@@ -548,11 +503,104 @@ export function CreateTask() {
               <div className="w-full h-[1px] my-3 bg-gray-200"></div>
               <div className="flex items-center justify-between w-full">
                 <div className="flex gap-2">
-                  {/* {[Paperclip, AtSign, SmilePlus, Link, List, AlignLeft].map((Icon, index) => (
-                    <button key={index} className="p-1 text-gray-400 hover:text-gray-600">
-                      <Icon className="w-5 h-5" />
-                    </button>
-                  ))} */}
+                  {[
+                    { value: "pin" },
+                    { value: "emoji" },
+                    {
+                      value: "heading",
+                      onClick: () => {
+                        if (editor) editor.chain().focus().toggleHeading({ level: 1 }).run();
+                      },
+                      activeCondition: editor?.isActive("heading", { level: 1 }),
+                    },
+                    {
+                      value: "bold",
+                      onClick: () => {
+                        editor?.chain().focus().toggleBold().run();
+                      },
+                      activeCondition: editor?.isActive("bold"),
+                    },
+                    {
+                      value: "italian",
+                      onClick: () => {
+                        editor?.chain().focus().toggleItalic().run();
+                      },
+                      activeCondition: editor?.isActive("italic"),
+                    },
+                    {
+                      value: "code",
+                      onClick: () => {
+                        editor?.chain().focus().toggleCodeBlock().run();
+                      },
+                      activeCondition: editor?.isActive("codeBlock"),
+                    },
+                    {
+                      value: "link",
+                      onClick: () => {},
+                      activeCondition: editor?.isActive("link"),
+                    },
+                    {
+                      value: "number_list",
+                      onClick: () => {
+                        editor?.chain().focus().toggleOrderedList().run();
+                      },
+                      activeCondition: editor?.isActive("orderedList"),
+                    },
+                    {
+                      value: "dottedlist",
+                      onClick: () => {
+                        editor?.chain().focus().toggleBulletList().run();
+                      },
+                      activeCondition: editor?.isActive("bulletList"),
+                    },
+                    {
+                      value: "check_list",
+                      onClick: () => {
+                        editor?.chain().focus().toggleTaskList().run();
+                      },
+                      activeCondition: editor?.isActive("taskList"),
+                    },
+                  ].map((name, index) => (
+                    <>
+                      {name.value == "link" ? (
+                        <LinkPopover
+                          defaultValue={editor?.getAttributes("link").href}
+                          onAdd={setLink}
+                          trigger={
+                            <button
+                              type="button"
+                              key={index}
+                              onClick={() => {
+                                if (name.onClick) {
+                                  name.onClick();
+                                }
+                              }}
+                              className={`p-1 text-gray-400 rounded-md hover:text-gray-600 ${
+                                name.activeCondition ? "bg-gray-100" : ""
+                              }`}
+                            >
+                              <Icon name={name.value} />
+                            </button>
+                          }
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          key={index}
+                          onClick={() => {
+                            if (name.onClick) {
+                              name.onClick();
+                            }
+                          }}
+                          className={`p-1 text-gray-400 rounded-md hover:text-gray-600 ${
+                            name.activeCondition ? "bg-gray-100" : ""
+                          }`}
+                        >
+                          <Icon name={name.value} />
+                        </button>
+                      )}
+                    </>
+                  ))}
                 </div>
                 <Button
                   style={{

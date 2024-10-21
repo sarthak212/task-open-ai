@@ -46,7 +46,7 @@ export function Combobox({
       }}
     >
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent className="w-[200px] pointer-events-auto p-0">
+      <PopoverContent align="start" className="w-[200px] pointer-events-auto p-0">
         <Command>
           <CommandInput placeholder={placeholder ? placeholder : "Search..."} className="h-9" />
           <CommandList>

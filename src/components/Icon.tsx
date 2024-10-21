@@ -42,6 +42,36 @@ export default function Icon({
     case "ai":
       src = "ai.svg";
       break;
+    case "italian":
+      src = "italian.svg";
+      break;
+    case "pin":
+      src = "pin.svg";
+      break;
+    case "emoji":
+      src = "face.svg";
+      break;
+    case "heading":
+      src = "highlight.svg";
+      break;
+    case "bold":
+      src = "Bold.svg";
+      break;
+    case "code":
+      src = "code.svg";
+      break;
+    case "link":
+      src = "link.svg";
+      break;
+    case "number_list":
+      src = "number_list.svg";
+      break;
+    case "dottedlist":
+      src = "dottedlist.svg";
+      break;
+    case "check_list":
+      src = "check_list.svg";
+      break;
     default:
       src = "frame.svg";
 

@@ -18,7 +18,7 @@ async function createTask(newTask: any) {
 
 export function useOpenAI(body: { title?: string; description?: string }) {
   return useQuery({
-    queryKey: ["openai", body.title, body.description],
+    queryKey: ["openai", body.title, body.description || ""],
     queryFn: createTask,
     enabled: false,
     staleTime: 15 * 1000 * 60,
