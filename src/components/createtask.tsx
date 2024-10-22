@@ -505,6 +505,7 @@ export function CreateTask() {
                 <div className="flex gap-2">
                   {[
                     { value: "pin" },
+                    { value: "at" },
                     { value: "emoji" },
                     {
                       value: "heading",

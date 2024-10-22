@@ -72,6 +72,9 @@ export default function Icon({
     case "check_list":
       src = "check_list.svg";
       break;
+    case "at":
+      src = "email.svg";
+      break;
     default:
       src = "frame.svg";
 
